@@ -1,0 +1,38 @@
+# Nix configuration for Termux
+# Location: /data/data/com.termux/files/nix/etc/nix/nix.conf
+
+# Disable build users group (single-user mode)
+build-users-group =
+
+# Disable sandboxing (required for Termux)
+sandbox = false
+
+# Build settings
+max-jobs = auto
+cores = 0
+
+# Since we're using a custom store path, we can't use the official binary cache
+# All packages will need to be built from source
+substituters = 
+trusted-public-keys = 
+
+# Optional: If you set up your own binary cache, configure it here
+# substituters = https://your-cache.example.com
+# trusted-public-keys = your-cache.example.com:base64encodedkey
+
+# Experimental features (uncomment if needed)
+# experimental-features = nix-command flakes
+
+# Keep build logs
+keep-build-log = true
+
+# Keep failed builds for debugging
+keep-failed = false
+
+# Optimize store automatically
+auto-optimise-store = true
+
+# Garbage collection settings
+# Uncomment to enable automatic garbage collection
+# min-free = 1073741824  # Keep at least 1GB free
+# max-free = 3221225472  # Keep at most 3GB free
