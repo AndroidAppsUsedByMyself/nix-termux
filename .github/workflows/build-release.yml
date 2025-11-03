@@ -1,0 +1,143 @@
+name: Build and Release Nix Termux Installer
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install Nix
+      uses: cachix/install-nix-action@v27
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    
+    - name: Configure Nix for cross-compilation
+      run: |
+        mkdir -p ~/.config/nix
+        echo "extra-platforms = aarch64-linux" | sudo tee -a /etc/nix/nix.conf
+        sudo systemctl restart nix-daemon || true
+    
+    - name: Build installer tarball
+      run: |
+        chmod +x build.sh
+        ./build.sh
+    
+    - name: Get version from tag or date
+      id: version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+        else
+          VERSION="dev-$(date +%Y%m%d-%H%M%S)"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+    
+    - name: Verify tarball
+      run: |
+        ls -lh result/nix-termux-aarch64.tar.gz
+        tar -tzf result/nix-termux-aarch64.tar.gz | head -20
+        echo "Total files in tarball:"
+        tar -tzf result/nix-termux-aarch64.tar.gz | wc -l
+    
+    - name: Rename tarball with version
+      run: |
+        cp result/nix-termux-aarch64.tar.gz nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
+    
+    - name: Calculate checksums
+      run: |
+        sha256sum nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz > checksums.txt
+        sha512sum nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz >> checksums.txt
+        cat checksums.txt
+    
+    - name: Create draft release
+      uses: softprops/action-gh-release@v2
+      with:
+        draft: true
+        prerelease: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        name: Release ${{ steps.version.outputs.version }}
+        body: |
+          # Nix Bootstrap for Termux (aarch64-linux)
+          
+          This release contains a complete Nix installation for Termux on Android ARM64 devices.
+          
+          ## 📦 What's Included
+          
+          - Nix package manager (version 2.31.2)
+          - Complete stdenv bootstrap (GCC 14.3.0, glibc, binutils)
+          - Essential utilities (bash, coreutils, git, nano, less, etc.)
+          - 185+ store paths pre-built for aarch64-linux
+          
+          ## 📥 Installation
+          
+          1. **Download the tarball:**
+             ```bash
+             curl -LO https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
+             ```
+          
+          2. **Extract:**
+             ```bash
+             tar -xzf nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
+             cd tarball
+             ```
+          
+          3. **Run installer:**
+             ```bash
+             ./install.sh
+             ```
+          
+          4. **Set up environment (add to ~/.bashrc or ~/.zshrc):**
+             ```bash
+             export NIX_STORE_DIR="/data/data/com.termux/files/nix/store"
+             export NIX_STATE_DIR="/data/data/com.termux/files/nix/var"
+             export NIX_CONF_DIR="/data/data/com.termux/files/nix/etc"
+             export PATH="$NIX_STATE_DIR/nix/profiles/default/bin:$PATH"
+             ```
+          
+          ## ⚙️ Requirements
+          
+          - Android device with **aarch64 (ARM64)** architecture
+          - Termux app installed
+          - At least 2-3 GB free storage
+          - Internet connection (for future package builds)
+          
+          ## 📋 Important Notes
+          
+          - **No binary cache:** You'll need to build packages from source
+          - **Custom prefix:** Uses `/data/data/com.termux/files/nix` instead of `/nix`
+          - **Single-user mode:** No daemon, no sandboxing
+          
+          ## 🔒 Checksums
+          
+          See `checksums.txt` for SHA256 and SHA512 hashes.
+          
+          ## 📚 Documentation
+          
+          For detailed information, see the [README](https://github.com/${{ github.repository }}/blob/main/README.md).
+          
+          ---
+          
+          Built with cross-compilation from x86_64-linux to aarch64-linux using Nix.
+        files: |
+          nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
+          checksums.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nix-termux-installer-${{ steps.version.outputs.version }}
+        path: |
+          nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
+          checksums.txt
+          result/build.log
+        retention-days: 30
