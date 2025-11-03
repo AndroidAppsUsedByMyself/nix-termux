@@ -111,12 +111,12 @@ if nix-build bootstrap.nix -A installer \
     -o "$OUTPUT_DIR/installer" 2>&1 | tee "$OUTPUT_DIR/build.log"; then
     success "Installer built successfully!"
     
-    # Find the tarball
-    TARBALL=$(find "$OUTPUT_DIR/installer" -name "*.tar.gz" | head -n 1)
+    # Find the tarball (following symlinks with -L)
+    TARBALL=$(find -L "$OUTPUT_DIR/installer" -maxdepth 1 -name "nix-termux-aarch64.tar.gz" -type f | head -n 1)
     
     if [ -n "$TARBALL" ]; then
         TARBALL_SIZE=$(du -h "$TARBALL" | cut -f1)
-        success "Tarball created: $TARBALL"
+        success "Tarball found: $TARBALL"
         log "Tarball size: $TARBALL_SIZE"
         
         # Copy to a more convenient location
@@ -124,6 +124,8 @@ if nix-build bootstrap.nix -A installer \
         success "Copied to: $OUTPUT_DIR/nix-termux-aarch64.tar.gz"
     else
         error "Could not find tarball in installer output"
+        log "Contents of installer output:"
+        ls -la "$OUTPUT_DIR/installer"
         exit 1
     fi
     

@@ -239,9 +239,10 @@ EOF
   '';
   
   # Build the installer tarball
+  # Use buildPackages for tools that run during build (on the build platform)
   installer = pkgs.stdenv.mkDerivation {
     name = "nix-termux-installer";
-    nativeBuildInputs = [ pkgs.gnutar pkgs.gzip ];
+    nativeBuildInputs = with pkgs.buildPackages; [ gnutar gzip coreutils ];
     
     buildCommand = ''
       mkdir -p $out/tarball
