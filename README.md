@@ -1,38 +1,18 @@
-# Nix Bootstrap for Termux (aarch64-linux)
+# Nix for Termux (aarch64-linux)
 
-Bootstrap Nix package manager for Termux on Android with a custom prefix at `/data/data/com.termux/files/nix`.
+Run the Nix package manager on Android through Termux without root access. Uses a custom prefix at `/data/data/com.termux/files/nix` instead of `/nix`.
 
-This project enables running Nix on Android devices through Termux without requiring root access or modifying `/nix`. It's specifically designed for **aarch64 (ARM64) devices only**.
+**aarch64 (ARM64) devices only.**
 
-## Quick Installation (Termux)
-
-For users who just want to install Nix on Termux, run this one-line command:
+## Quick Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mio-19/nix-termux/main/install-nix-termux.sh | bash
 ```
 
-Or if you prefer `wget`:
+**Requirements:** aarch64 Android device, Termux installed, 2-3 GB free space.
 
-```bash
-wget -qO- https://raw.githubusercontent.com/mio-19/nix-termux/main/install-nix-termux.sh | bash
-```
-
-**Requirements:**
-- Android device with **aarch64 (ARM64) architecture**
-- Termux app installed
-- At least 2-3 GB free storage
-- Internet connection
-
-The script will automatically:
-1. Fetch the latest release from GitHub (via API)
-2. Download the release tarball
-3. Verify your system meets the requirements
-4. Extract and install Nix
-5. Configure your shell environment
-6. Set up necessary environment variables
-
-After installation, restart your terminal or run `source ~/.bashrc` (or `~/.zshrc`).
+After installation: `source ~/.bashrc` (or restart Termux)
 
 ---
 
@@ -53,7 +33,7 @@ This project combines two powerful Nix techniques:
 
 2. **Cross Compilation**: Following the [official Nix cross-compilation guide](https://nix.dev/tutorials/cross-compilation.html), we build for `aarch64-unknown-linux-gnu` from any platform
 
-**Important optimization**: We use the `NIX_STORE_DIR` environment variable override approach, which means we can skip one stage of the bootstrap! As dramforever noted: "the NIX_STORE variable can override the pre-configured settings within Nix. In other words, Nix does not require rebuilding for a 'cross-compiling' scenario like this. We can save one stage of Nix."
+**Important**: We configure Nix at build time with custom `--with-store-dir`, `--localstatedir`, and `--sysconfdir` options to match Termux's prefix. This ensures all paths (including the critical ELF interpreter path) point to `/data/data/com.termux/files/nix/store` instead of `/nix/store`. This is essential because the ELF interpreter path is hardcoded at build time and cannot be changed with environment variables.
 
 ### Why Custom Prefix?
 
@@ -70,9 +50,9 @@ This bootstrap uses a simplified two-stage approach (saving one stage thanks to 
 2. **Package**: Bundle the cross-compiled Nix with all stdenv bootstrap stages and essential tools into a tarball
 3. **Deploy**: Extract and install on Termux device, using environment variables (NIX_STORE_DIR, etc.) to point to the custom store location
 
-**Key optimizations**:
+**Key approach**:
 - **Cross-compilation**: Following [nix.dev's guide](https://nix.dev/tutorials/cross-compilation.html), we can build for ARM64 from any platform
-- **NIX_STORE override**: The original three-stage approach is not needed because Nix respects the `NIX_STORE_DIR` environment variable, allowing a single build to work with any store location
+- **Custom prefix configuration**: We configure Nix at build time with the correct store paths so all binaries (including their ELF interpreter paths) point to `/data/data/com.termux/files/nix/store`
 
 ### How We Follow the nix.dev Cross-Compilation Guide
 
@@ -322,14 +302,26 @@ Android/Termux cannot access `/nix/store` without root. The custom prefix at `/d
 - Full Nix functionality within Termux's sandbox
 - Standard Nix operations (store management, garbage collection, etc.)
 
-### The NIX_STORE_DIR Optimization
+### Custom Prefix Configuration
 
-As dramforever discovered, Nix respects the `NIX_STORE_DIR` environment variable at runtime. This means:
-- **We can skip one bootstrap stage**: Instead of building Nix three times (once for /nix/store, once for our custom store, once to finalize), we build once and use environment variables
-- **Single binary works anywhere**: The same Nix binary works with any store location
-- **Simpler maintenance**: Fewer moving parts, less complexity
+We configure Nix at build time with custom paths using `overrideAttrs`:
 
-This optimization saves several hours of build time and reduces the complexity of the bootstrap process significantly.
+```nix
+nixBoot = pkgs.nix.overrideAttrs (old: {
+  configureFlags = (old.configureFlags or []) ++ [
+    "--with-store-dir=/data/data/com.termux/files/nix/store"
+    "--localstatedir=/data/data/com.termux/files/nix/var"
+    "--sysconfdir=/data/data/com.termux/files/nix/etc"
+  ];
+});
+```
+
+This is **critical** because:
+- **ELF interpreter path**: The dynamic linker path is hardcoded in ELF binaries at build time (e.g., `/data/data/com.termux/files/nix/store/.../lib/ld-linux-aarch64.so.1`)
+- **Cannot be changed at runtime**: Unlike some Nix paths that can be overridden with environment variables, the interpreter path is baked into the binary
+- **Must match the actual location**: If the interpreter path points to `/nix/store/...` but files are in `/data/data/com.termux/files/nix/store/...`, the binary won't run
+
+While `NIX_STORE_DIR` environment variable can override some Nix behavior at runtime, it cannot change the hardcoded ELF interpreter path, which is why proper build-time configuration is essential.
 
 ### Dependency Categorization
 

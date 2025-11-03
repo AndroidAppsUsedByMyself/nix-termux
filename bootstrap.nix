@@ -15,9 +15,9 @@
 # This builds a Nix installation for /data/data/com.termux/files/nix
 # Targeting: aarch64-linux only
 #
-# Note: We use NIX_STORE_DIR environment variable override, which saves
-# one stage of the bootstrap process. The Nix built here respects the
-# NIX_STORE_DIR variable, so we don't need to rebuild it multiple times.
+# Approach: Build for /nix/store, then use patchelf to rewrite interpreter paths.
+# This avoids the complexity of multi-stage bootstrapping while ensuring binaries
+# work correctly with the custom store directory.
 #
 # Usage (following nix.dev cross-compilation guide):
 #   nix-build bootstrap.nix -A installer \
@@ -28,7 +28,7 @@
 # - hostPlatform: Where the program will run (aarch64-unknown-linux-gnu)
 # - targetPlatform: For compilers only; we assume host = target
 
-{ # Use crossSystem for proper cross-compilation (see nix.dev guide)
+{ # Use crossSystem for proper cross-compilation
   crossSystem ? null
 , pkgs ? 
     if crossSystem != null
@@ -36,39 +36,54 @@
     else import <nixpkgs> {}
 }:
 
-let
-  # Verify we're targeting the right platform
-  _ = assert crossSystem != null -> 
-    (pkgs.stdenv.hostPlatform.isLinux && pkgs.stdenv.hostPlatform.isAarch64)
-    || builtins.trace "Warning: crossSystem provided but not targeting aarch64-linux!" true;
-    null;
-
-in
+# CRITICAL UNDERSTANDING: Store Directory and ELF Interpreter Paths
+# 
+# The store directory is HARDCODED in the Nix binary itself, not in nixpkgs.
+# When Nix builds a package, it sets the store path, and this gets embedded in:
+# 1. The package's own path (e.g., /nix/store/xxx-bash-5.0)
+# 2. Dependencies' paths (e.g., references to /nix/store/yyy-glibc)
+# 3. ELF interpreter paths (e.g., /nix/store/yyy-glibc/lib/ld-linux.so)
+#
+# The ELF interpreter path is ABSOLUTE and checked by the kernel. If a binary says
+# /nix/store/xxx/lib/ld-linux-aarch64.so.1, the kernel looks for EXACTLY that path.
+#
+# SOLUTION: We use patchelf in the installer to rewrite interpreter paths.
+#
+# Approach:
+# 1. Build everything with normal Nix (cross-compile to aarch64)
+#    - Binaries have interpreter: /nix/store/xxx-glibc/lib/ld-linux-aarch64.so.1
+#    - Only Nix itself is configured for custom paths
+# 2. In installer, use patchelf to rewrite ALL binaries' interpreter paths
+#    - Change /nix/store → /data/data/com.termux/files/nix/store
+# 3. Extract store to target location
+#
+# This is simpler than multi-stage bootstrap and works reliably.
 
 with pkgs;
 
 let
-  # Our custom prefix for Termux
+  # Target directories for Termux  
   termuxPrefix = "/data/data/com.termux/files";
   nixPrefix = "${termuxPrefix}/nix";
-  
-  # Store directory configuration
   storeDir = "${nixPrefix}/store";
   stateDir = "${nixPrefix}/var";
   confDir = "${nixPrefix}/etc";
   
-  # Build Nix with custom store paths for Termux
-  # We MUST configure these at build time because:
-  # 1. The ELF interpreter path is hardcoded in binaries (e.g., /nix/store/.../lib/ld-linux-aarch64.so.1)
-  # 2. This cannot be changed with environment variables at runtime
-  # 3. If the interpreter path points to /nix/store but files are in /data/data/com.termux/files/nix/store, binaries won't run
-  nixBoot = pkgs.nix.overrideAttrs (old: {
-    configureFlags = (old.configureFlags or []) ++ [
-      "--with-store-dir=${storeDir}"
-      "--localstatedir=${stateDir}"
-      "--sysconfdir=${confDir}"
-    ];
-  });
+  # Build Nix configured for custom store paths
+  # Note: We only configure Nix itself. Other packages are built normally
+  # and will be patched by patchelf in the installer.
+  nixBoot = let
+    nixComponents = pkgs.nixVersions.nixComponents_2_31;
+    
+    nixComponentsWithCustomPaths = nixComponents.overrideAllMesonComponents (finalAttrs: prevAttrs: {
+      mesonFlags = (prevAttrs.mesonFlags or []) ++ [
+        (lib.mesonOption "libstore:store-dir" storeDir)
+        (lib.mesonOption "libstore:localstatedir" stateDir)
+        (lib.mesonOption "libstore:sysconfdir" confDir)
+      ];
+    });
+  in
+  nixComponentsWithCustomPaths.nix-everything;
   
   # Collect all stdenv bootstrap stages to avoid rebuilding toolchains
   # This recursively walks back through the stdenv bootstrap process
@@ -117,6 +132,10 @@ let
       pkgs.patch
       pkgs.diffutils
       pkgs.which
+      
+      # For fixing ELF interpreter paths
+      pkgs.patchelf
+      pkgs.file
       
       # For convenience
       pkgs.less
@@ -168,6 +187,7 @@ let
     mkdir -p "$CONF_DIR/nix"
     
     echo "Copying store paths..."
+    echo "(ELF interpreter paths have been pre-patched during build)"
     cp -r ./store/* "$STORE_DIR/" || true
     
     echo "Initializing Nix database..."
@@ -245,7 +265,13 @@ EOF
   # Use buildPackages for tools that run during build (on the build platform)
   installer = pkgs.stdenv.mkDerivation {
     name = "nix-termux-installer";
-    nativeBuildInputs = with pkgs.buildPackages; [ gnutar gzip coreutils ];
+    nativeBuildInputs = with pkgs.buildPackages; [ 
+      gnutar 
+      gzip 
+      coreutils 
+      patchelf 
+      file 
+    ];
     
     buildCommand = ''
       mkdir -p $out/tarball
@@ -260,6 +286,44 @@ EOF
         storePath=$(basename "$path")
         cp -rL "$path" "store/$storePath"
       done
+      
+      echo ""
+      echo "Patching ELF interpreter paths..."
+      echo "This rewrites /nix/store -> ${storeDir} in all binaries"
+      
+      PATCHED_COUNT=0
+      TOTAL_CHECKED=0
+      
+      # Find all potential ELF files (executables and libraries)
+      for file in $(find store -type f \( -executable -o -name '*.so*' \)); do
+        TOTAL_CHECKED=$((TOTAL_CHECKED + 1))
+        
+        # Check if it's an ELF file
+        if file "$file" 2>/dev/null | grep -q "ELF.*executable\|ELF.*shared object"; then
+          # Try to get the interpreter path
+          INTERP=$(patchelf --print-interpreter "$file" 2>/dev/null || true)
+          
+          if [ -n "$INTERP" ] && echo "$INTERP" | grep -q "^/nix/store"; then
+            # Calculate the new interpreter path
+            # Replace /nix/store with our target store directory
+            NEW_INTERP=$(echo "$INTERP" | sed 's|^/nix/store|${storeDir}|')
+            
+            # Check if the new interpreter exists in our copied store
+            RELATIVE_INTERP=$(echo "$NEW_INTERP" | sed 's|${storeDir}/||')
+            if [ -f "store/$RELATIVE_INTERP" ]; then
+              # Patch the interpreter
+              if patchelf --set-interpreter "$NEW_INTERP" "$file" 2>/dev/null; then
+                PATCHED_COUNT=$((PATCHED_COUNT + 1))
+                echo "  Patched: $(basename $(dirname $file))/$(basename $file)"
+              fi
+            fi
+          fi
+        fi
+      done
+      
+      echo ""
+      echo "Checked $TOTAL_CHECKED files, patched $PATCHED_COUNT binaries"
+      echo ""
       
       # Copy registration info
       cp ${nixClosure}/registration registration

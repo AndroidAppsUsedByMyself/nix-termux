@@ -1,0 +1,355 @@
+[0;34m[2025-11-03 19:23:14][0m Current system: x86_64-linux
+[1;33m[WARNING][0m Current system (x86_64-linux) differs from target (aarch64-linux)
+[0;34m[2025-11-03 19:23:14][0m Will cross-compile to: aarch64-unknown-linux-gnu
+[0;34m[2025-11-03 19:23:14][0m Using crossSystem configuration as per https://nix.dev/tutorials/cross-compilation.html
+[1;33m[WARNING][0m No QEMU binfmt support detected
+[0;34m[2025-11-03 19:23:14][0m This is OK - cross-compilation will work, but you won't be able to test binaries locally
+[0;34m[2025-11-03 19:23:14][0m Starting Nix bootstrap process...
+[0;34m[2025-11-03 19:23:14][0m 
+[0;34m[2025-11-03 19:23:14][0m WHAT THIS SCRIPT DOES:
+[0;34m[2025-11-03 19:23:14][0m   1. Cross-compiles Nix and dependencies for aarch64-linux
+[0;34m[2025-11-03 19:23:14][0m   2. Collects all stdenv bootstrap stages (to avoid toolchain rebuilds)
+[0;34m[2025-11-03 19:23:14][0m   3. Bundles essential utilities (bash, coreutils, git, etc.)
+[0;34m[2025-11-03 19:23:14][0m   4. Creates a tarball with installation script
+[0;34m[2025-11-03 19:23:14][0m 
+[0;34m[2025-11-03 19:23:14][0m This will take a while (potentially hours) as it builds:
+[0;34m[2025-11-03 19:23:14][0m   - Nix itself
+[0;34m[2025-11-03 19:23:14][0m   - All stdenv bootstrap stages
+[0;34m[2025-11-03 19:23:14][0m   - Essential utilities
+[0;34m[2025-11-03 19:23:14][0m 
+[0;34m[2025-11-03 19:23:14][0m TECHNICAL NOTE:
+[0;34m[2025-11-03 19:23:14][0m   We use patchelf during the build to rewrite ELF interpreter paths.
+[0;34m[2025-11-03 19:23:14][0m   Binaries are built for /nix/store, then patched to use
+[0;34m[2025-11-03 19:23:14][0m   /data/data/com.termux/files/nix/store before packaging.
+
+[0;34m[2025-11-03 19:23:14][0m Building Nix installer for Termux...
+[0;34m[2025-11-03 19:23:14][0m Using crossSystem: { config = "aarch64-unknown-linux-gnu"; }
+[0;34m[2025-11-03 19:23:14][0m 
+[0;34m[2025-11-03 19:23:14][0m Note: This may take a LONG time (several hours) as it builds:
+[0;34m[2025-11-03 19:23:14][0m   - The entire GCC toolchain for aarch64
+[0;34m[2025-11-03 19:23:14][0m   - Glibc and system libraries
+[0;34m[2025-11-03 19:23:14][0m   - All stdenv bootstrap stages
+[0;34m[2025-11-03 19:23:14][0m   - Nix and dependencies
+[0;34m[2025-11-03 19:23:14][0m   - Essential utilities
+[0;34m[2025-11-03 19:23:14][0m 
+[0;34m[2025-11-03 19:23:14][0m Following the cross-compilation approach from:
+[0;34m[2025-11-03 19:23:14][0m   https://nix.dev/tutorials/cross-compilation.html
+[0;34m[2025-11-03 19:23:14][0m 
+these 4 derivations will be built:
+  /nix/store/4vh0xwbrrdwl04hp5001r8dfs99j5d6d-patchelf-aarch64-unknown-linux-gnu-0.15.2.drv
+  /nix/store/bga9iydmkn8xg4x86n8dr2la95wc5l17-install.sh.drv
+  /nix/store/ddmg25j94x8z2fr13d7xpw3vrfls322p-closure-info.drv
+  /nix/store/zickkrgp0mbz4lfqb64wdfipip8zfvjb-nix-termux-installer-aarch64-unknown-linux-gnu.drv
+this path will be fetched (0.18 MiB download, 0.18 MiB unpacked):
+  /nix/store/9bangizlrzva6iv0ldyk51dq0j95d1ix-patchelf-0.15.2.tar.bz2
+building '/nix/store/bga9iydmkn8xg4x86n8dr2la95wc5l17-install.sh.drv'...
+copying path '/nix/store/9bangizlrzva6iv0ldyk51dq0j95d1ix-patchelf-0.15.2.tar.bz2' from 'https://cache.nixos.org'...
+building '/nix/store/4vh0xwbrrdwl04hp5001r8dfs99j5d6d-patchelf-aarch64-unknown-linux-gnu-0.15.2.drv'...
+Running phase: unpackPhase
+unpacking source archive /nix/store/9bangizlrzva6iv0ldyk51dq0j95d1ix-patchelf-0.15.2.tar.bz2
+source root is patchelf-0.15.2
+setting SOURCE_DATE_EPOCH to timestamp 1755033524 of file "patchelf-0.15.2/patchelf.spec"
+Running phase: patchPhase
+Running phase: updateAutotoolsGnuConfigScriptsPhase
+Running phase: updateAutotoolsGnuConfigScriptsPhase
+Running phase: configurePhase
+patching script interpreter paths in ./configure
+./configure: interpreter directive changed from "#!/bin/sh" to "/nix/store/ciarnmsx8lvsrmdbjddpmx0pqjrm8imb-bash-5.3p3/bin/sh"
+configure flags: --disable-dependency-tracking --prefix=/nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2 --build=x86_64-unknown-linux-gnu --host=aarch64-unknown-linux-gnu
+checking for a BSD-compatible install... /nix/store/xs8scz9w9jp4hpqycx3n3bah5y07ymgj-coreutils-9.8/bin/install -c
+checking whether build environment is sane... yes
+checking for aarch64-unknown-linux-gnu-strip... aarch64-unknown-linux-gnu-strip
+checking for a race-free mkdir -p... /nix/store/xs8scz9w9jp4hpqycx3n3bah5y07ymgj-coreutils-9.8/bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking for aarch64-unknown-linux-gnu-strip... (cached) aarch64-unknown-linux-gnu-strip
+checking for aarch64-unknown-linux-gnu-nm... aarch64-unknown-linux-gnu-nm
+checking for aarch64-unknown-linux-gnu-objdump... aarch64-unknown-linux-gnu-objdump
+checking for aarch64-unknown-linux-gnu-objcopy... aarch64-unknown-linux-gnu-objcopy
+checking for aarch64-unknown-linux-gnu-readelf... aarch64-unknown-linux-gnu-readelf
+checking for aarch64-unknown-linux-gnu-strings... aarch64-unknown-linux-gnu-strings
+checking whether make supports the include directive... yes (GNU style)
+checking for aarch64-unknown-linux-gnu-gcc... aarch64-unknown-linux-gnu-gcc
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... yes
+checking for suffix of object files... o
+checking whether the compiler supports GNU C... yes
+checking whether aarch64-unknown-linux-gnu-gcc accepts -g... yes
+checking for aarch64-unknown-linux-gnu-gcc option to enable C11 features... none needed
+checking whether aarch64-unknown-linux-gnu-gcc understands -c and -o together... yes
+checking dependency style of aarch64-unknown-linux-gnu-gcc... none
+checking whether the compiler supports GNU C++... yes
+checking whether aarch64-unknown-linux-gnu-g++ accepts -g... yes
+checking for aarch64-unknown-linux-gnu-g++ option to enable C++11 features... none needed
+checking dependency style of aarch64-unknown-linux-gnu-g++... none
+checking dependency style of aarch64-unknown-linux-gnu-gcc... none
+checking whether aarch64-unknown-linux-gnu-g++ supports C++17 features with -std=c++17... yes
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+config.status: creating Makefile
+config.status: creating src/Makefile
+config.status: creating tests/Makefile
+config.status: creating patchelf.spec
+config.status: executing depfiles commands
+Running phase: buildPhase
+build flags: -j16 SHELL=/nix/store/ciarnmsx8lvsrmdbjddpmx0pqjrm8imb-bash-5.3p3/bin/bash
+Making all in src
+make[1]: Entering directory '/build/patchelf-0.15.2/src'
+aarch64-unknown-linux-gnu-g++ -std=c++17 -DPACKAGE_NAME=\"patchelf\" -DPACKAGE_TARNAME=\"patchelf\" -DPACKAGE_VERSION=\"0.15.2\" -DPACKAGE_STRING=\"patchelf\ 0.15.2\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"patchelf\" -DVERSION=\"0.15.2\" -DHAVE_CXX17=1 -I.    -Wall -Wextra -Wcast-qual -std=c++17 -D_FILE_OFFSET_BITS=64     -g -O2 -c -o patchelf.o patchelf.cc
+aarch64-unknown-linux-gnu-g++ -std=c++17 -Wall -Wextra -Wcast-qual -std=c++17 -D_FILE_OFFSET_BITS=64     -g -O2   -o patchelf patchelf.o  
+make[1]: Leaving directory '/build/patchelf-0.15.2/src'
+Making all in tests
+make[1]: Entering directory '/build/patchelf-0.15.2/tests'
+make[1]: Nothing to be done for 'all'.
+make[1]: Leaving directory '/build/patchelf-0.15.2/tests'
+make[1]: Entering directory '/build/patchelf-0.15.2'
+make[1]: Nothing to be done for 'all-am'.
+make[1]: Leaving directory '/build/patchelf-0.15.2'
+Running phase: installPhase
+install flags: -j16 SHELL=/nix/store/ciarnmsx8lvsrmdbjddpmx0pqjrm8imb-bash-5.3p3/bin/bash install
+Making install in src
+make[1]: Entering directory '/build/patchelf-0.15.2/src'
+make[2]: Entering directory '/build/patchelf-0.15.2/src'
+make[2]: Nothing to be done for 'install-data-am'.
+ /nix/store/xs8scz9w9jp4hpqycx3n3bah5y07ymgj-coreutils-9.8/bin/mkdir -p '/nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2/bin'
+  /nix/store/xs8scz9w9jp4hpqycx3n3bah5y07ymgj-coreutils-9.8/bin/install -c patchelf '/nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2/bin'
+make[2]: Leaving directory '/build/patchelf-0.15.2/src'
+make[1]: Leaving directory '/build/patchelf-0.15.2/src'
+Making install in tests
+make[1]: Entering directory '/build/patchelf-0.15.2/tests'
+make[2]: Entering directory '/build/patchelf-0.15.2/tests'
+make[2]: Nothing to be done for 'install-exec-am'.
+make[2]: Nothing to be done for 'install-data-am'.
+make[2]: Leaving directory '/build/patchelf-0.15.2/tests'
+make[1]: Leaving directory '/build/patchelf-0.15.2/tests'
+make[1]: Entering directory '/build/patchelf-0.15.2'
+make[2]: Entering directory '/build/patchelf-0.15.2'
+make[2]: Nothing to be done for 'install-exec-am'.
+ /nix/store/xs8scz9w9jp4hpqycx3n3bah5y07ymgj-coreutils-9.8/bin/mkdir -p '/nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2/share/doc/patchelf'
+ /nix/store/xs8scz9w9jp4hpqycx3n3bah5y07ymgj-coreutils-9.8/bin/mkdir -p '/nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2/share/man/man1'
+ /nix/store/xs8scz9w9jp4hpqycx3n3bah5y07ymgj-coreutils-9.8/bin/install -c -m 644 README.md '/nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2/share/doc/patchelf'
+ /nix/store/xs8scz9w9jp4hpqycx3n3bah5y07ymgj-coreutils-9.8/bin/install -c -m 644 patchelf.1 '/nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2/share/man/man1'
+make[2]: Leaving directory '/build/patchelf-0.15.2'
+make[1]: Leaving directory '/build/patchelf-0.15.2'
+Running phase: fixupPhase
+shrinking RPATHs of ELF executables and libraries in /nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2
+shrinking /nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2/bin/patchelf
+checking for references to /build/ in /nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2...
+gzipping man pages under /nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2/share/man/
+patching script interpreter paths in /nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2
+stripping (with command aarch64-unknown-linux-gnu-strip and flags -S -p) in  /nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2/bin
+building '/nix/store/ddmg25j94x8z2fr13d7xpw3vrfls322p-closure-info.drv'...
+structuredAttrs is enabled
+building '/nix/store/zickkrgp0mbz4lfqb64wdfipip8zfvjb-nix-termux-installer-aarch64-unknown-linux-gnu.drv'...
+Copying store paths...
+  Copying: /nix/store/0hvwbf2jzy5aaqwgymzdvzrgky7f0qx7-libffi-aarch64-unknown-linux-gnu-3.5.2
+  Copying: /nix/store/0ja5daq2yay3svg6f48spyfby7pgy5bm-xgcc-14.3.0-libgcc
+  Copying: /nix/store/0vmavy386bx1kz2s3s6cr7hf3h1hybpf-xz-aarch64-unknown-linux-gnu-5.8.1-bin
+  Copying: /nix/store/0vqrw0y515015i3065r9s00jcp1cd4hy-glibc-2.40-66-dev
+  Copying: /nix/store/0y5xmdb7qfvimjwbq7ibg1xdgkgjwqng-no-broken-symlinks.sh
+  Copying: /nix/store/1jrd3nns7sm8bh6sdm2swj8r48gi64d8-libidn2-aarch64-unknown-linux-gnu-2.3.8
+  Copying: /nix/store/1pll1w9gvb8lfj4plw7kwvwvhd8f3253-lowdown-aarch64-unknown-linux-gnu-2.0.2-lib
+  Copying: /nix/store/1wnp68pb4c0xy9ii82b8wi02wmj00xk8-bootstrap-stage3-gcc-wrapper-14.3.0
+  Copying: /nix/store/1wqcyv7jskdksni72l93455rp903jh9m-acl-2.3.2
+  Copying: /nix/store/20h0f1bxr3i9n21sl15h8p758m6s7b91-zlib-ng-aarch64-unknown-linux-gnu-2.2.5
+  Copying: /nix/store/22r4s6lqhl43jkazn51f3c18qwk894g4-gnugrep-3.12
+  Copying: /nix/store/23f660qv57v4kxcykb0f9cm5pv7v4lz3-linux-headers-6.16.7
+  Copying: /nix/store/2mxwf1zi8gxzmynnv9j903igzimmm8zj-pcre2-10.46
+  Copying: /nix/store/2xlx0mj9a8gvf1w1kbgnpqzn6jrf83dp-binutils-wrapper-2.44
+  Copying: /nix/store/3cja37awy19d63ipvgpjiksd0qcmwcl2-gmp-6.3.0
+  Copying: /nix/store/3gj76dgl2vh1czp89jkps861bqk8m9md-nix-fetchers-aarch64-unknown-linux-gnu-2.31.2
+  Copying: /nix/store/3l4lxmjaqdqv2gbixhmm45r9kkwnqqmq-gnu-config-2024-01-01
+  Copying: /nix/store/3m0zcl1by8ifylmgdcaa317cnhqn8q95-gnutar-1.35
+  Copying: /nix/store/416ykpc2bksb90sd1ia8cybxb3p83mrd-binutils-2.44
+  Copying: /nix/store/43lv2nr7pj7wy09qyicjq57bl209ccis-gnumake-4.4.1
+  Copying: /nix/store/4fiwnj7fkv012bq6b6hlqas3bk0qzv3i-binutils-2.44-lib
+  Copying: /nix/store/4lmw4rjcpqn2d51wk0haaxvdw2q7rlrq-boost-aarch64-unknown-linux-gnu-1.87.0
+  Copying: /nix/store/50mm2bqcj76n7rk775dwcqhnfysl89h9-expand-response-params
+  Copying: /nix/store/52vn9rhjsf2vn9hjh9d045416qpy5ngn-ngtcp2-aarch64-unknown-linux-gnu-1.15.1
+  Copying: /nix/store/5l54afi895dmwxk5202qryhqgpwb0bjy-busybox-aarch64-unknown-linux-gnu-1.36.1
+  Copying: /nix/store/5rdq2p4bydj036dm00vfghz2ccq385kf-stdenv-linux
+  Copying: /nix/store/5vfn9flxaz5f41lci9ldbdw75xckv0l2-findutils-aarch64-unknown-linux-gnu-4.10.0
+  Copying: /nix/store/5yzw0vhkyszf2d179m0qfkgxmp5wjjx4-move-docs.sh
+  Copying: /nix/store/6mbl55wc8f2hld2qpz4qjm662v32l7in-patchelf-aarch64-unknown-linux-gnu-0.15.2
+  Copying: /nix/store/6vbn94m6gz0x2v9sfiijkip3czlysnwn-glibc-aarch64-unknown-linux-gnu-2.40-66-bin
+  Copying: /nix/store/6vylgmvqvyifmg8n7rsrh3kpqixzb75b-onetbb-aarch64-unknown-linux-gnu-2022.2.0
+  Copying: /nix/store/76prlisiw0sf8ri76mrfgsw6hnm0fw0w-nix-expr-aarch64-unknown-linux-gnu-2.31.2
+  Copying: /nix/store/76zn66xib0r80s5y7p0m1ba3y036sxwh-glibc-2.40-66-bin
+  Copying: /nix/store/775grhxq9ai0wyf22lsz41c0cz8xynng-aarch64-unknown-linux-gnu-binutils-wrapper-2.44
+  Copying: /nix/store/77r02p7rp3s9z6lqms2i0kxx1mysixw8-update-autotools-gnu-config-scripts-hook
+  Copying: /nix/store/7gbkm1hjmd6jajym5i88j8i69qq04fr5-brotli-aarch64-unknown-linux-gnu-1.1.0-lib
+  Copying: /nix/store/7lbrvckx4wl2kp9ss87gjh8kwyk0jp22-glibc-aarch64-unknown-linux-gnu-2.40-66-dev
+  Copying: /nix/store/7ql4x9i7w7ihxw23vkanvcvrvqhay23c-diffutils-3.12
+  Copying: /nix/store/830fjx55kfbsc20nxs4a0s4zhi412hpz-less-aarch64-unknown-linux-gnu-679
+  Copying: /nix/store/85clx3b0xkdf58jn161iy80y5223ilbi-compress-man-pages.sh
+  Copying: /nix/store/85n78yrssyfc65f32yxpqqcpzkgbjv8c-patchelf-0.15.2
+  Copying: /nix/store/8b38znaga5abai9m52j062cmfsf193ya-coreutils-aarch64-unknown-linux-gnu-9.8
+  Copying: /nix/store/8c4l9cqqj7pixqlmljx5d495pfpw8pys-gawk-5.3.2
+  Copying: /nix/store/8rvx9zcbkmk08ia3ykn23hwfrg25fx6a-zlib-1.3.1
+  Copying: /nix/store/918ldr9axgh5kdmpp5fnj2n37pyghwbx-binutils-wrapper-2.44
+  Copying: /nix/store/93swx25w14g3vccnh6jj7h6jyh45lw5l-nss-cacert-aarch64-unknown-linux-gnu-3.115
+  Copying: /nix/store/9h5xpb5v8y1v1p3mkxlznnlbkypiwkhl-libblake3-aarch64-unknown-linux-gnu-1.8.2
+  Copying: /nix/store/9rjnhx9i6p5y9z98l74kr4gas2wnhsbc-ncurses-aarch64-unknown-linux-gnu-6.5
+  Copying: /nix/store/9svkz27x581lp0rq0xp67v14qb1y8nr9-util-linux-minimal-aarch64-unknown-linux-gnu-2.41.2-lib
+  Copying: /nix/store/9xlxcg4yacdqbmihn98ilyqz54653mir-ed-1.22.2
+  Copying: /nix/store/a2ysvhvm3y9y6qwq36gdxln0wys3zf52-bootstrap-stage-xgcc-stdenv-linux
+  Copying: /nix/store/a74hyv0zjq5i7c6mv33ya9pviagr5dcd-pcre2-aarch64-unknown-linux-gnu-10.46
+  Copying: /nix/store/a8b2xwb1k7bv9f72z7mg9wivfhfs68ll-aarch64-unknown-linux-gnu-gcc-14.3.0-lib
+  Copying: /nix/store/aal4c7s9m716gyr9jknlfvm04pp42bri-binutils-patchelfed-ld-2.44
+  Copying: /nix/store/ag7bw4pmdmmf4mccwrgzg34qngdxv1l4-mailcap-aarch64-unknown-linux-gnu-2.1.54
+  Copying: /nix/store/ajrdf015k5ipn89gyh06isniabysrkcw-bootstrap-stage0-stdenv-linux
+  Copying: /nix/store/ambacmwlhkwlx6ngxccsa9z1wdszgwjx-gnu-config-2024-01-01
+  Copying: /nix/store/asqkb3q6gjks13wsm554mjndwkq3jd3v-nix-store-aarch64-unknown-linux-gnu-2.31.2
+  Copying: /nix/store/b53hy6yfslalfch84pq5xw26kn3i6mj3-libseccomp-aarch64-unknown-linux-gnu-2.6.0-lib
+  Copying: /nix/store/bnqk0cv5vyiz720ahwdskqpk8ippsx55-gdbm-aarch64-unknown-linux-gnu-1.26-lib
+  Copying: /nix/store/bwbs2ynqxjb4x1yvvb210r4malqbsmcx-sqlite-aarch64-unknown-linux-gnu-3.50.4
+  Copying: /nix/store/bxdlrazm3i8q8sinq15da7z0skkin8d2-bootstrap-stage2-gcc-wrapper-14.3.0
+  Copying: /nix/store/c9wj7l5dmlmsp4iaiijdybdmkbg3spvk-expand-response-params
+  Copying: /nix/store/cb66qh8fr13il60jirynjyp2r2yyw0gg-attr-aarch64-unknown-linux-gnu-2.5.2
+  Copying: /nix/store/cbbj9mbws3f7iii5absvimjl8vmvxlk5-openssl-aarch64-unknown-linux-gnu-3.6.0
+  Copying: /nix/store/ciarnmsx8lvsrmdbjddpmx0pqjrm8imb-bash-5.3p3
+  Copying: /nix/store/cickvswrvann041nqxb0rxilc46svw1n-prune-libtool-files.sh
+  Copying: /nix/store/cmzya9irvxzlkh7lfy6i82gbp0saxqj3-multiple-outputs.sh
+  Copying: /nix/store/cv1d7p48379km6a85h4zp6kr86brh32q-audit-tmpdir.sh
+  Copying: /nix/store/d4p5gcvm5gaf6xqk1ifxpl8ncccv877b-nix-main-aarch64-unknown-linux-gnu-2.31.2
+  Copying: /nix/store/daamdpmaz2vjvna55ccrc30qw3qb8h6d-glibc-2.40-66
+  Copying: /nix/store/dg2vd58yn0gkvfqb19b7hwi80d041fhz-readline-aarch64-unknown-linux-gnu-8.3p1
+  Copying: /nix/store/dg2ylz80v4rkzcdy13qc7a60jqh0k6ps-mpfr-4.2.2
+  Copying: /nix/store/f04v56v4i3z0mrvl2npgcx5k5a792yjc-libidn2-2.3.8
+  Copying: /nix/store/f1nxs8z6pgiyvwjkl5zi2mszn2jrjkkd-binutils-patchelfed-ld-wrapper-2.44
+  Copying: /nix/store/ffrg0560kj0066s4k9pznjand907nlnz-gcc-14.3.0
+  Copying: /nix/store/fn4sb234yq9z16wrcpp5vzgx6dracslv-bash-aarch64-unknown-linux-gnu-5.3p3
+  Copying: /nix/store/fq04v4d5rkj8p4cxccbh2kvnwgrbrgpk-gnutar-aarch64-unknown-linux-gnu-1.35
+  Copying: /nix/store/fyaryjvghbkpfnsyw97hb3lyb37s1pd6-move-lib64.sh
+  Copying: /nix/store/g9qqqrczy9z6qyaixb675fh1c7ly5zdi-gzip-aarch64-unknown-linux-gnu-1.14
+  Copying: /nix/store/gb7p9qc6wrzq068j229d3p5z0576gfi9-aarch64-unknown-linux-gnu-gcc-wrapper-14.3.0
+  Copying: /nix/store/gpwlv1hsykscxws6h8r2cv17lkchpmwq-bzip2-1.0.8
+  Copying: /nix/store/gw332lr2yr7x9cpiayi15n1cppjh6wyx-update-autotools-gnu-config-scripts-hook
+  Copying: /nix/store/h79jhx658qjx91i8jlcryy5b3wqp9w7r-nix-util-aarch64-unknown-linux-gnu-2.31.2
+  Copying: /nix/store/hx05nj6xwd94ha2ckyryrvbxr3lykhzp-python3-aarch64-unknown-linux-gnu-3.13.8
+  Copying: /nix/store/hxns4m9anvw3gzviknnl3lz9sd7i2xz9-isl-0.20
+  Copying: /nix/store/i6dxz3rys1wqg2dzqhf3cz5ig7fcdakp-gnu-config-2024-01-01
+  Copying: /nix/store/i76ncv3pwcc9a4499sd2j8rwaq1pmnsx-nghttp3-aarch64-unknown-linux-gnu-1.12.0
+  Copying: /nix/store/ib29qpv4pz7i6mxpdvxv9n82s8psvrk9-linux-headers-6.16.7
+  Copying: /nix/store/iib0pnsbxg4caipq8jxws6dh6jw6dz70-zstd-aarch64-unknown-linux-gnu-1.5.7
+  Copying: /nix/store/ivs0ximaj8m0dgakfd87cd9s466s2r2i-update-autotools-gnu-config-scripts-hook
+  Copying: /nix/store/j137vnvvgr0c2r8dxsh9fd460k9c30vz-libgit2-aarch64-unknown-linux-gnu-1.9.1-lib
+  Copying: /nix/store/j2xmbm51xfry3wdb990dxkgyxwnigqdc-mpdecimal-aarch64-unknown-linux-gnu-4.0.1
+  Copying: /nix/store/j9sgc900ww49shgx3nmf7irrwk8ak9sy-gmp-with-cxx-6.3.0
+  Copying: /nix/store/jharln6mlbwa6sw5fh44g9xxkps22kjh-bootstrap-stage-xgcc-gcc-wrapper-
+  Copying: /nix/store/jr2hpcx863iiq8v2dqp4xpvlh8c2x1q6-xgcc-14.3.0
+  Copying: /nix/store/jry2qccn8w4c8gf7aj9nilw8b90gwkbs-nghttp2-aarch64-unknown-linux-gnu-1.67.1-lib
+  Copying: /nix/store/jsj1sql9id9c10sxmg7rvq3pj0f1l19b-stdenv-linux
+  Copying: /nix/store/jssayfaknd9smlf0agjdwxxd86zwd3ry-libssh2-aarch64-unknown-linux-gnu-1.11.1
+  Copying: /nix/store/k4qpjyk7pviv62hffb9qcwibc9nw24g4-libsodium-aarch64-unknown-linux-gnu-1.0.20
+  Copying: /nix/store/k4zr2cqwigswk2i1pincyighkwca5wh7-aarch64-unknown-linux-gnu-gcc-14.3.0
+  Copying: /nix/store/k7fiy805lrbwln200shrp56vxiwnp8cv-hwloc-aarch64-unknown-linux-gnu-2.12.2-lib
+  Copying: /nix/store/k8s5jqr15iqa2bk675n5lanrml22xn03-update-autotools-gnu-config-scripts-hook
+  Copying: /nix/store/k9zrfyic8cs0mgw30cyj7snh22pcwwcd-git-aarch64-unknown-linux-gnu-2.51.0
+  Copying: /nix/store/kd30widaa7wr1af8rixl4ifkgzxyvs06-bootstrap-stage1-gcc-wrapper-
+  Copying: /nix/store/kd4xwxjpjxi71jkm6ka0np72if9rm3y0-move-sbin.sh
+  Copying: /nix/store/kjhllhadx9arb3729h6n9kyalyn89hhy-expand-response-params
+  Copying: /nix/store/klajji6jiq93fa1a8v8fwrbpnx0lf7z6-isl-0.20
+  Copying: /nix/store/kpr6v6i6z8cdknw64qsn380lsznwz2qi-boehm-gc-aarch64-unknown-linux-gnu-8.2.8
+  Copying: /nix/store/kzdvxqmsrq8ga2wmhss1bcqlivvgxkqj-bzip2-aarch64-unknown-linux-gnu-1.0.8-bin
+  Copying: /nix/store/lbfg38p9kgm2dadwjqa7fgv0sjjh3ban-update-autotools-gnu-config-scripts-hook
+  Copying: /nix/store/lrr52ir638sjw2bm50xhhfxm0pvn3vzy-xz-5.8.1-bin
+  Copying: /nix/store/m8c63dq6i5clhrv57gxs9p38zzn1pxz9-gnu-config-2024-01-01
+  Copying: /nix/store/may4yj21malwkirqzlg9z25zfkakfyqy-libmpc-1.3.1
+  Copying: /nix/store/mcw4azz4ycjlyzb00vk4c0vi4w3avhi5-wget-aarch64-unknown-linux-gnu-1.25.0
+  Copying: /nix/store/mgr444hz69h6mkjzhmmi31s6nnpn18ki-keyutils-aarch64-unknown-linux-gnu-1.6.3-lib
+  Copying: /nix/store/miap8jjp87z0gibkrzh68lw2w8kzy4yx-patch-2.8
+  Copying: /nix/store/mk91piknxygi74f6py0hbvichywgylqx-gawk-aarch64-unknown-linux-gnu-5.3.2
+  Copying: /nix/store/mnd897flngivhxnw8sxznhrcwwc9vyk3-gcc-14.3.0-libgcc
+  Copying: /nix/store/mqi9i9hx29gpsv24jqr11208yn4jfqkk-xz-5.8.1
+  Copying: /nix/store/myb8idv24r607ff8zgg5d0n3291mrs3p-binutils-2.44-lib
+  Copying: /nix/store/n5gv9bzcw84ljpv3j0danwgsbpb2sgbn-gnumake-aarch64-unknown-linux-gnu-4.4.1
+  Copying: /nix/store/n686xm9c2ak4x02pj9izvkm0zx7ilwir-file-5.45
+  Copying: /nix/store/na2g6al7k4ha7bpv7l5i2w18pvs3vryg-libgcc-aarch64-unknown-linux-gnu-14.3.0
+  Copying: /nix/store/nd0lxkx1610wlxr64xm3z0zd0kkn73y6-libpsl-aarch64-unknown-linux-gnu-0.21.5
+  Copying: /nix/store/nkp2jjfx646f1brf8mbyn6ypagxks2vi-gnu-config-2024-01-01
+  Copying: /nix/store/np15pfpz7hl4n16yxnax2dyxnqc9v4jx-aarch64-unknown-linux-gnu-binutils-2.44
+  Copying: /nix/store/nqwygg76wsgfj1b4r1xmy9jv4pmlnrks-expand-response-params
+  Copying: /nix/store/nwjxbdvgrylq1dlq2pnllhqsjnq4kymp-xgcc-14.3.0-lib
+  Copying: /nix/store/p9wyb6hx08gwipg523w9sg6f8k1bmsi7-glibc-aarch64-unknown-linux-gnu-2.40-66
+  Copying: /nix/store/p9wzypb84a60ymqnhqza17ws0dvlyprg-busybox
+  Copying: /nix/store/pag6l61paj1dc9sv15l7bm5c17xn5kyk-move-systemd-user-units.sh
+  Copying: /nix/store/pb8lsa3qmxg1q7n865n9nnz2gdrnby4g-which-aarch64-unknown-linux-gnu-2.23
+  Copying: /nix/store/pffsda0dbyjkpk5vg8dw7g8ascs2079l-patch-aarch64-unknown-linux-gnu-2.8
+  Copying: /nix/store/pilsssjjdxvdphlg2h19p0bfx5q0jzkn-strip.sh
+  Copying: /nix/store/pk1w34j48ljr9zpq9qk6brnbqxvnj38c-bootstrap-stage1-stdenv-linux
+  Copying: /nix/store/pnv76017g6hrclsrczq488xy1jif07b7-mpfr-4.2.2
+  Copying: /nix/store/px9868s6266k9bmc9pm66dd7z9vkq26x-attr-2.5.2
+  Copying: /nix/store/q2g7ffnncd6h87l2ffdyvrmwi810m1pr-xz-5.8.1
+  Copying: /nix/store/qfv2r6dwi4c8njhww1y6069dc3apds78-gmp-with-cxx-aarch64-unknown-linux-gnu-6.3.0
+  Copying: /nix/store/qg8m7509z9dsad3s0267vkpvdh5ypggr-nix-aarch64-unknown-linux-gnu-2.31.2
+  Copying: /nix/store/qmxdznsl3450y9dba3q85qdxahvpd87x-gettext-aarch64-unknown-linux-gnu-0.25.1
+  Copying: /nix/store/qpr50zzy4rhimpvb43703m7zm2rwcb69-nano-aarch64-unknown-linux-gnu-8.6
+  Copying: /nix/store/qqvfnxa9jg71wp4hfg1l63r4m78iwvl9-findutils-4.10.0
+  Copying: /nix/store/r3zacbi5cd9n98x44yh6mdywrdf81zxh-bootstrap-stage0-binutils-wrapper-
+  Copying: /nix/store/r9rphadfg9668msj95d1phgisz3wagv0-bootstrap-stage4-gcc-wrapper-14.3.0
+  Copying: /nix/store/razasrvdg7ckplfmvdxv4ia3wbayr94s-bootstrap-tools
+  Copying: /nix/store/rnx2xbwxf99hy3a7sq8mghcm8klbkww7-tzdata-aarch64-unknown-linux-gnu-2025b
+  Copying: /nix/store/rrps5r02dicnlqia5nwblkc3mj54xibx-diffutils-aarch64-unknown-linux-gnu-3.12
+  Copying: /nix/store/s09q4jm140c96jaa1jny0fqx86xnj83p-bash-interactive-aarch64-unknown-linux-gnu-5.3p3
+  Copying: /nix/store/s4ci99l1mlkf0wmm8iizsd1az5jjzr5m-libunistring-aarch64-unknown-linux-gnu-1.4
+  Copying: /nix/store/s4mdinbgcqci35a9jd2iv30yyvv6dhwv-libmpc-1.3.1
+  Copying: /nix/store/s77pa6yckk8hqmbris5pr6cji5qc4nbn-krb5-aarch64-unknown-linux-gnu-1.22.1-lib
+  Copying: /nix/store/sa2fim2vnfyfqzxr4mi1a7mqa5mcyvxj-curl-aarch64-unknown-linux-gnu-8.16.0-bin
+  Copying: /nix/store/sd9c9h940yv36386mvyq2vqmyv80qnsc-gmp-with-cxx-6.3.0
+  Copying: /nix/store/srq3ckl8g94mzrpdd6bq668j5fk1jkr6-libarchive-aarch64-unknown-linux-gnu-3.8.1-lib
+  Copying: /nix/store/v5zyzcc8slz7w73s3wpgysd4z2grz6w0-libunistring-1.4
+  Copying: /nix/store/v7k3chc36y62hz03irl58k3p0r7hapaq-zlib-aarch64-unknown-linux-gnu-1.3.1
+  Copying: /nix/store/v929dkp7v2lshz9prsxsm3qwa8dmjnvi-acl-aarch64-unknown-linux-gnu-2.3.2
+  Copying: /nix/store/v9aqd1235qfwgnvd9bf6gal4kzm1vkci-bootstrap-stage4-stdenv-linux
+  Copying: /nix/store/va4ykvqxc0c8rdf7v46ypyd9mim0yrbz-gnu-config-2024-01-01
+  Copying: /nix/store/vc9gyjf05hjya9xpd499ycqzd5d3z4fb-nix-cmd-aarch64-unknown-linux-gnu-2.31.2
+  Copying: /nix/store/vjj9x3dzszbzjpkzwx63z4gpypiqphzf-gzip-1.14
+  Copying: /nix/store/vvb57xrh04cdkjvbzb9zyphk24slykmv-editline-aarch64-unknown-linux-gnu-1.17.1-unstable-2025-05-24
+  Copying: /nix/store/vwfprzg8aimy7mfjyn9qcj1swk0f0i82-bootstrap-stage0-glibc-bootstrapFiles
+  Copying: /nix/store/vwx988887gsrdvg9lbg5f03sy91wrjjv-xz-5.8.1-bin
+  Copying: /nix/store/vx7j25sd17vqcqgj166fziagz15kdyz6-mpfr-4.2.2
+  Copying: /nix/store/vzj5iy2png2rs6q2kb3svzp0cnd878f1-bzip2-1.0.8-bin
+  Copying: /nix/store/w0gv1jwflgsganv43897gqn9v4yarvzv-bootstrap-stage3-stdenv-linux
+  Copying: /nix/store/w5b24bmwq2hmd8g6p2ww23znb5ijpj27-gnu-config-2024-01-01
+  Copying: /nix/store/wgrbkkaldkrlrni33ccvm3b6vbxzb656-make-symlinks-relative.sh
+  Copying: /nix/store/wp5cwqydgmrz1jjz3rv2f775kl322sw1-nix-aarch64-unknown-linux-gnu-2.31.2
+  Copying: /nix/store/x1gjn5jq1bf6s33xd78mchvr5ccann2y-gnugrep-aarch64-unknown-linux-gnu-3.12
+  Copying: /nix/store/x7asdg0islqp7ya1mq7czrkvc6nv04dn-publicsuffix-list-0-unstable-2025-08-28
+  Copying: /nix/store/x8c40nfigps493a07sdr2pm5s9j1cdc0-patch-shebangs.sh
+  Copying: /nix/store/x8mydcgbry214s802nzvy7fdljx404ym-gcc-wrapper-14.3.0
+  Copying: /nix/store/x9nxxa9v9dj4hb6mlqphf9w7k59bi01w-nix-flake-aarch64-unknown-linux-gnu-2.31.2
+  Copying: /nix/store/xclr0vzz72vhpk839ch0dflx2kyrcdxx-gnused-aarch64-unknown-linux-gnu-4.9
+  Copying: /nix/store/xrayvpj9kfp8x44rhxf96k7r271zqa0h-bzip2-aarch64-unknown-linux-gnu-1.0.8
+  Copying: /nix/store/xs8scz9w9jp4hpqycx3n3bah5y07ymgj-coreutils-9.8
+  Copying: /nix/store/xwy5sqyffznhicb9g93vcga7jl93r202-git-aarch64-unknown-linux-gnu-2.51.0-doc
+  Copying: /nix/store/xxv7sh696jfzbwvh5ygwqp219rg9hvj6-xz-aarch64-unknown-linux-gnu-5.8.1
+  Copying: /nix/store/xyff06pkhki3qy1ls77w10s0v79c9il0-reproducible-builds.sh
+  Copying: /nix/store/y701r3lp5lh417yavlkmpbdafr3i15nj-isl-0.20
+  Copying: /nix/store/yf0pp7a5amdbjhrncmyiljnch98a39hy-bootstrap-stage2-stdenv-linux
+  Copying: /nix/store/yi9iv1w4h1jnknqg97wsaf1k546vxa0k-update-autotools-gnu-config-scripts-hook
+  Copying: /nix/store/yq3v8dcsh4h6iimpxhiqjp984gk0ylw6-expat-aarch64-unknown-linux-gnu-2.7.3
+  Copying: /nix/store/yq5d7ffnqa6vga76cavgh2a3acwzd5k2-file-aarch64-unknown-linux-gnu-5.45
+  Copying: /nix/store/ys549prpkq22zpgjvyh0czq5kyp1xyjk-update-autotools-gnu-config-scripts-hook
+  Copying: /nix/store/yvpmrmxd53grk1p1p2615g647skrm418-curl-aarch64-unknown-linux-gnu-8.16.0
+  Copying: /nix/store/ywm3lhdbzwl7byx4yry266cyd880q86h-llhttp-aarch64-unknown-linux-gnu-9.3.0
+  Copying: /nix/store/yy0zgvwzj953frcj73lr7zmyggnv7r6b-binutils-2.44
+  Copying: /nix/store/z55x0q74zldi64iwamqf8wgrm2iza5rk-zlib-1.3.1
+  Copying: /nix/store/z6cvdrlc69ynxvafwygchx412klwkchz-libmpc-1.3.1
+  Copying: /nix/store/z7a34j3xnp66rpddayyxrxwsahxccbip-gcc-14.3.0-lib
+  Copying: /nix/store/z7k98578dfzi6l3hsvbivzm7hfqlk0zc-set-source-date-epoch-to-latest.sh
+  Copying: /nix/store/zh9157flak3s2yyxza57q8vhxl2v9vxk-gmp-6.3.0
+  Copying: /nix/store/zhkcari3kg63grwrcwip3zi64clllw7c-libxml2-aarch64-unknown-linux-gnu-2.15.0
+  Copying: /nix/store/zjs4z3v7mncwkybsnqqispialzcr0wmm-patchelf-0.15.2
+  Copying: /nix/store/zppkx0lkizglyqa9h26wf495qkllrjgy-gnused-4.9
+  Copying: /nix/store/zzks84x50a53bsqyan7mqsac192xsjcy-expand-response-params
+
+Patching ELF interpreter paths...
+This rewrites /nix/store -> /data/data/com.termux/files/nix/store in all binaries
+
+Checked 3663 files, patched 0 binaries
+
+Creating tarball...

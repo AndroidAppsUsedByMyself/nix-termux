@@ -86,9 +86,9 @@ log "  - All stdenv bootstrap stages"
 log "  - Essential utilities"
 log ""
 log "TECHNICAL NOTE:"
-log "  We use the NIX_STORE_DIR environment variable approach, which saves"
-log "  one bootstrap stage. Instead of rebuilding Nix for /nix/store, then"
-log "  rebuilding for our custom prefix, we build once and use env vars."
+log "  We use patchelf during the build to rewrite ELF interpreter paths."
+log "  Binaries are built for /nix/store, then patched to use"
+log "  /data/data/com.termux/files/nix/store before packaging."
 echo ""
 
 # Stage 1: Build the installer using cross-compilation
