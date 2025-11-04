@@ -307,14 +307,12 @@ EOF
         
         echo ""
         echo "Results:"
-        echo "  Total files checked: $TOTAL_CHECKED"
-        echo "  ELF files with interpreter: $ELF_WITH_INTERP"
         echo "  Successfully patched: $PATCHED_COUNT"
         if [ $SKIPPED_COUNT -gt 0 ]; then
           echo "  Skipped (interpreter not in closure): $SKIPPED_COUNT"
         fi
         
-        if [ $PATCHED_COUNT -eq 0 ] && [ $ELF_WITH_INTERP -gt 0 ]; then
+        if [ $PATCHED_COUNT -eq 0 ] && [ $TOTAL_ELF -gt 0 ]; then
           echo ""
           echo "ERROR: Found ELF files with interpreters but patched none!"
           echo "This likely means the patching logic has a bug."

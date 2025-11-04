@@ -166,7 +166,7 @@ build_for_arch() {
     local arch_output_dir="$OUTPUT_DIR/$arch"
     mkdir -p "$arch_output_dir"
     
-    if nix-build bootstrap.nix -A "installer.$arch.installer" \
+    if nix-build bootstrap.nix -A "installer.$arch" \
         --arg crossSystem "{ config = \"$target_platform\"; }" \
         -o "$arch_output_dir/installer" 2>&1 | tee "$arch_output_dir/build.log"; then
         success "Installer built successfully for $arch!"

@@ -5,11 +5,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      architectures:
-        description: 'Architectures to build (comma-separated: aarch64,armv7l,x86_64,i686,all)'
-        required: false
-        default: 'aarch64'
 
 jobs:
   build:
@@ -84,11 +79,16 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: artifacts
-        merge-multiple: true
+        merge-multiple: false
     
-    - name: List downloaded artifacts
+    - name: Prepare release files
       run: |
-        ls -la artifacts/
+        mkdir release-files
+        find artifacts/ -name "*.tar.gz" -exec cp {} release-files/ \;
+        find artifacts/ -name "checksums-*.txt" -exec cp {} release-files/ \;
+        ls -la release-files/
+        echo "Files to be included in release:"
+        ls -la release-files/
     
     - name: Create release
       uses: softprops/action-gh-release@v2
@@ -154,13 +154,7 @@ jobs:
           
           **Checksums:** See `checksums-<arch>.txt` for each architecture
         files: |
-          artifacts/nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
-          artifacts/checksums-aarch64.txt
-          artifacts/nix-termux-armv7l-${{ steps.version.outputs.version }}.tar.gz
-          artifacts/checksums-armv7l.txt
-          artifacts/nix-termux-x86_64-${{ steps.version.outputs.version }}.tar.gz
-          artifacts/checksums-x86_64.txt
-          artifacts/nix-termux-i686-${{ steps.version.outputs.version }}.tar.gz
-          artifacts/checksums-i686.txt
+          release-files/*.tar.gz
+          release-files/checksums-*.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
