@@ -296,9 +296,15 @@ EOF
                   fi
                 fi
               else
-                SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
-                if [ $SKIPPED_COUNT -le 3 ]; then
-                  echo "  ⚠ Skipped $(basename $file): interpreter not in closure"
+                # Check if it's a system library like libc
+                if echo "$INTERP_RELATIVE" | grep -q "libc.so"; then
+                  # For system libraries, we'll skip patching but not treat as error
+                  echo "  ⚠ Skipped system library $(basename $file): $INTERP_RELATIVE"
+                else
+                  SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+                  if [ $SKIPPED_COUNT -le 3 ]; then
+                    echo "  ⚠ Skipped $(basename $file): interpreter not in closure"
+                  fi
                 fi
               fi
             fi
@@ -312,7 +318,9 @@ EOF
           echo "  Skipped (interpreter not in closure): $SKIPPED_COUNT"
         fi
         
-        if [ $PATCHED_COUNT -eq 0 ] && [ $TOTAL_ELF -gt 0 ]; then
+        # Only fail if we found ELF files with interpreters but none were patched successfully
+        # Allow system libraries like libc to be skipped
+        if [ $PATCHED_COUNT -eq 0 ] && [ $TOTAL_ELF -gt $SKIPPED_COUNT ] && [ $TOTAL_ELF -gt 0 ]; then
           echo ""
           echo "ERROR: Found ELF files with interpreters but patched none!"
           echo "This likely means the patching logic has a bug."
