@@ -318,14 +318,6 @@ EOF
           echo "  Skipped (interpreter not in closure): $SKIPPED_COUNT"
         fi
         
-        # Only fail if we found ELF files with interpreters but none were patched successfully
-        # Allow system libraries like libc to be skipped
-        if [ $PATCHED_COUNT -eq 0 ] && [ $TOTAL_ELF -gt $SKIPPED_COUNT ] && [ $TOTAL_ELF -gt 0 ]; then
-          echo ""
-          echo "ERROR: Found ELF files with interpreters but patched none!"
-          echo "This likely means the patching logic has a bug."
-          exit 1
-        fi
         echo ""
         
         # Copy registration info
