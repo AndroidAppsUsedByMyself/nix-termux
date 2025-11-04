@@ -5,10 +5,18 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      architectures:
+        description: 'Architectures to build (comma-separated: aarch64,armv7l,x86_64,i686,all)'
+        required: false
+        default: 'aarch64'
 
 jobs:
   build:
     runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        arch: [aarch64, armv7l, x86_64, i686]
     
     steps:
     - name: Checkout repository
@@ -22,7 +30,7 @@ jobs:
     - name: Build installer tarball
       run: |
         chmod +x build.sh
-        ./build.sh
+        ./build.sh -a ${{ matrix.arch }}
     
     - name: Get version from commit
       id: version
@@ -33,20 +41,54 @@ jobs:
     
     - name: Verify tarball
       run: |
-        ls -lh result/nix-termux-aarch64.tar.gz
-        tar -tzf result/nix-termux-aarch64.tar.gz | head -20
+        ls -lh result/nix-termux-${{ matrix.arch }}.tar.gz
+        tar -tzf result/nix-termux-${{ matrix.arch }}.tar.gz | head -20
         echo "Total files in tarball:"
-        tar -tzf result/nix-termux-aarch64.tar.gz | wc -l
+        tar -tzf result/nix-termux-${{ matrix.arch }}.tar.gz | wc -l
     
     - name: Rename tarball with version
       run: |
-        cp result/nix-termux-aarch64.tar.gz nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
+        cp result/nix-termux-${{ matrix.arch }}.tar.gz nix-termux-${{ matrix.arch }}-${{ steps.version.outputs.version }}.tar.gz
     
     - name: Calculate checksums
       run: |
-        sha256sum nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz > checksums.txt
-        sha512sum nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz >> checksums.txt
-        cat checksums.txt
+        sha256sum nix-termux-${{ matrix.arch }}-${{ steps.version.outputs.version }}.tar.gz > checksums-${{ matrix.arch }}.txt
+        sha512sum nix-termux-${{ matrix.arch }}-${{ steps.version.outputs.version }}.tar.gz >> checksums-${{ matrix.arch }}.txt
+        cat checksums-${{ matrix.arch }}.txt
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nix-termux-installer-${{ matrix.arch }}-${{ steps.version.outputs.version }}
+        path: |
+          nix-termux-${{ matrix.arch }}-${{ steps.version.outputs.version }}.tar.gz
+          checksums-${{ matrix.arch }}.txt
+          result/${{ matrix.arch }}/build.log
+        retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Get version from commit
+      id: version
+      run: |
+        VERSION="$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        merge-multiple: true
+    
+    - name: List downloaded artifacts
+      run: |
+        ls -la artifacts/
     
     - name: Create release
       uses: softprops/action-gh-release@v2
@@ -54,9 +96,9 @@ jobs:
         tag_name: ${{ steps.version.outputs.version }}
         name: ${{ steps.version.outputs.version }}
         body: |
-          # Nix for Termux (aarch64-linux)
+          # Nix for Termux (Multi-architecture)
           
-          Complete Nix installation for Termux on Android ARM64 devices.
+          Complete Nix installation for Termux on Android devices.
           
           ## Quick Install
           
@@ -66,9 +108,33 @@ jobs:
           
           ## Manual Install
           
+          Download the appropriate tarball for your device architecture:
+          
+          ### aarch64 (ARM64 - most common)
           ```bash
           curl -LO https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
           tar -xzf nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
+          cd tarball && ./install.sh
+          ```
+          
+          ### armv7l (ARM 32-bit)
+          ```bash
+          curl -LO https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nix-termux-armv7l-${{ steps.version.outputs.version }}.tar.gz
+          tar -xzf nix-termux-armv7l-${{ steps.version.outputs.version }}.tar.gz
+          cd tarball && ./install.sh
+          ```
+          
+          ### x86_64 (Intel/AMD 64-bit)
+          ```bash
+          curl -LO https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nix-termux-x86_64-${{ steps.version.outputs.version }}.tar.gz
+          tar -xzf nix-termux-x86_64-${{ steps.version.outputs.version }}.tar.gz
+          cd tarball && ./install.sh
+          ```
+          
+          ### i686 (Intel/AMD 32-bit)
+          ```bash
+          curl -LO https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/nix-termux-i686-${{ steps.version.outputs.version }}.tar.gz
+          tar -xzf nix-termux-i686-${{ steps.version.outputs.version }}.tar.gz
           cd tarball && ./install.sh
           ```
           
@@ -80,25 +146,21 @@ jobs:
           
           ## Requirements
           
-          - aarch64 Android device
-          - Termux installed
+          - Android device with Termux installed
           - 2-3 GB free space
+          - Architecture matching one of the packages above
           
           See [README](https://github.com/${{ github.repository }}/blob/main/README.md) for details.
           
-          **Checksums:** See `checksums.txt`
+          **Checksums:** See `checksums-<arch>.txt` for each architecture
         files: |
-          nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
-          checksums.txt
+          artifacts/nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
+          artifacts/checksums-aarch64.txt
+          artifacts/nix-termux-armv7l-${{ steps.version.outputs.version }}.tar.gz
+          artifacts/checksums-armv7l.txt
+          artifacts/nix-termux-x86_64-${{ steps.version.outputs.version }}.tar.gz
+          artifacts/checksums-x86_64.txt
+          artifacts/nix-termux-i686-${{ steps.version.outputs.version }}.tar.gz
+          artifacts/checksums-i686.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: nix-termux-installer-${{ steps.version.outputs.version }}
-        path: |
-          nix-termux-aarch64-${{ steps.version.outputs.version }}.tar.gz
-          checksums.txt
-          result/build.log
-        retention-days: 30

@@ -47,7 +47,7 @@ die() {
 # Banner
 echo ""
 echo "╔════════════════════════════════════════╗"
-echo "║  Nix for Termux Installer (aarch64)   ║"
+echo "║     Nix for Termux Installer           ║"
 echo "╔════════════════════════════════════════╝"
 echo "║"
 echo "║  Repository: ${REPO_OWNER}/${REPO_NAME}"
@@ -64,8 +64,10 @@ fi
 
 # Check architecture
 ARCH=$(uname -m)
-if [ "$ARCH" != "aarch64" ]; then
-    die "This installer is for aarch64 only. Detected: $ARCH"
+SUPPORTED_ARCHS=("aarch64" "armv7l" "x86_64" "i686")
+
+if [[ ! " ${SUPPORTED_ARCHS[*]} " =~ " ${ARCH} " ]]; then
+    die "Unsupported architecture: $ARCH. Supported: ${SUPPORTED_ARCHS[*]}"
 fi
 
 success "Environment check passed (${ARCH})"
@@ -115,15 +117,18 @@ fi
 
 # Parse release information
 RELEASE_TAG=$(grep -o '"tag_name": *"[^"]*"' "$RELEASE_JSON" | head -1 | sed 's/"tag_name": *"\([^"]*\)"/\1/')
-DOWNLOAD_URL=$(grep -o '"browser_download_url": *"[^"]*aarch64[^"]*\.tar\.gz"' "$RELEASE_JSON" | head -1 | sed 's/"browser_download_url": *"\([^"]*\)"/\1/')
+
+# Find the download URL for the specific architecture
+DOWNLOAD_URL=$(grep -o '"browser_download_url": *"[^"]*'${ARCH}'[^"]*\.tar\.gz"' "$RELEASE_JSON" | head -1 | sed 's/"browser_download_url": *"\([^"]*\)"/\1/')
 
 rm -f "$RELEASE_JSON"
 
 if [ -z "$RELEASE_TAG" ] || [ -z "$DOWNLOAD_URL" ]; then
-    die "Failed to parse release information. Please check the repository has releases."
+    die "Failed to parse release information for architecture $ARCH. Please check the repository has releases for this architecture."
 fi
 
 success "Found latest release: ${RELEASE_TAG}"
+echo "  Architecture: $ARCH"
 echo "  Download URL: $DOWNLOAD_URL"
 
 # Create temporary directory

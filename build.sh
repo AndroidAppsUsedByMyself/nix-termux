@@ -33,6 +33,83 @@ warn() {
     echo -e "${YELLOW}[WARNING]${NC} $*"
 }
 
+# Help message
+show_help() {
+    echo "Usage: $0 [OPTIONS]"
+    echo "Build Nix for Termux for specified architecture(s)"
+    echo ""
+    echo "Options:"
+    echo "  -a, --arch ARCH       Build for specific architecture (aarch64, armv7l, x86_64, i686)"
+    echo "  -A, --all             Build for all supported architectures"
+    echo "  -l, --list            List supported architectures"
+    echo "  -h, --help            Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0                    # Build for aarch64 (default)"
+    echo "  $0 -a armv7l          # Build for armv7l only"
+    echo "  $0 -A                 # Build for all architectures"
+    echo "  $0 -a aarch64 -a x86_64  # Build for aarch64 and x86_64"
+}
+
+# Supported architectures
+SUPPORTED_ARCHS=("aarch64" "armv7l" "x86_64" "i686")
+
+# Architecture to target platform mapping
+declare -A TARGET_PLATFORMS
+TARGET_PLATFORMS["aarch64"]="aarch64-unknown-linux-gnu"
+TARGET_PLATFORMS["armv7l"]="armv7l-unknown-linux-gnueabihf"
+TARGET_PLATFORMS["x86_64"]="x86_64-unknown-linux-gnu"
+TARGET_PLATFORMS["i686"]="i686-unknown-linux-gnu"
+
+# Parse command line arguments
+ARCHS_TO_BUILD=()
+BUILD_ALL=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -a|--arch)
+            if [[ " ${SUPPORTED_ARCHS[*]} " =~ " $2 " ]]; then
+                ARCHS_TO_BUILD+=("$2")
+                shift 2
+            else
+                error "Unsupported architecture: $2"
+                error "Supported architectures: ${SUPPORTED_ARCHS[*]}"
+                exit 1
+            fi
+            ;;
+        -A|--all)
+            BUILD_ALL=true
+            shift
+            ;;
+        -l|--list)
+            echo "Supported architectures:"
+            for arch in "${SUPPORTED_ARCHS[@]}"; do
+                echo "  - $arch (${TARGET_PLATFORMS[$arch]})"
+            done
+            exit 0
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            error "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+# If no arch specified, build for aarch64 by default (maintain backward compatibility)
+if [ ${#ARCHS_TO_BUILD[@]} -eq 0 ] && [ "$BUILD_ALL" = false ]; then
+    ARCHS_TO_BUILD=("aarch64")
+fi
+
+# If --all specified, build for all architectures
+if [ "$BUILD_ALL" = true ]; then
+    ARCHS_TO_BUILD=("${SUPPORTED_ARCHS[@]}")
+fi
+
 # Check if we have Nix available
 if ! command -v nix-build &> /dev/null; then
     error "nix-build not found. You need a working Nix installation to bootstrap."
@@ -44,41 +121,17 @@ fi
 CURRENT_SYSTEM=$(nix-instantiate --eval -E 'builtins.currentSystem' | tr -d '"')
 log "Current system: $CURRENT_SYSTEM"
 
-# Target platform configuration (following nix.dev guide)
-# Using the standard platform config string format: <cpu>-<vendor>-<os>-<abi>
-# This is the LLVM target triple format, recognized by GCC, Clang, and other toolchains
-TARGET_PLATFORM="aarch64-unknown-linux-gnu"
-
-# Note: We use 'unknown' as the vendor because:
-# 1. It's a convention for systems without a specific vendor (like PC or Apple)
-# 2. It's what config.guess returns on generic ARM Linux systems
-# 3. It matches nixpkgs' pkgsCross.aarch64-multiplatform definition
-
-if [ "$CURRENT_SYSTEM" != "aarch64-linux" ]; then
-    warn "Current system ($CURRENT_SYSTEM) differs from target (aarch64-linux)"
-    log "Will cross-compile to: $TARGET_PLATFORM"
-    log "Using crossSystem configuration as per https://nix.dev/tutorials/cross-compilation.html"
-    
-    # Check if we have binfmt support for running aarch64 binaries
-    if [ -f /proc/sys/fs/binfmt_misc/qemu-aarch64 ]; then
-        success "QEMU binfmt support detected - can run aarch64 binaries"
-    else
-        warn "No QEMU binfmt support detected"
-        log "This is OK - cross-compilation will work, but you won't be able to test binaries locally"
-    fi
-fi
-
 # Create output directory
 OUTPUT_DIR="$(pwd)/result"
 mkdir -p "$OUTPUT_DIR"
 
-log "Starting Nix bootstrap process..."
+log "Starting Nix bootstrap process for architectures: ${ARCHS_TO_BUILD[*]}"
 log ""
 log "WHAT THIS SCRIPT DOES:"
-log "  1. Cross-compiles Nix and dependencies for aarch64-linux"
+log "  1. Cross-compiles Nix and dependencies for specified architectures"
 log "  2. Collects all stdenv bootstrap stages (to avoid toolchain rebuilds)"
 log "  3. Bundles essential utilities (bash, coreutils, git, etc.)"
-log "  4. Creates a tarball with installation script"
+log "  4. Creates tarballs with installation scripts"
 log ""
 log "This will take a while (potentially hours) as it builds:"
 log "  - Nix itself"
@@ -91,62 +144,102 @@ log "  Binaries are built for /nix/store, then patched to use"
 log "  /data/data/com.termux/files/nix/store before packaging."
 echo ""
 
-# Stage 1: Build the installer using cross-compilation
-log "Building Nix installer for Termux..."
-log "Using crossSystem: { config = \"$TARGET_PLATFORM\"; }"
-log ""
-log "Note: This may take a LONG time (several hours) as it builds:"
-log "  - The entire GCC toolchain for aarch64"
-log "  - Glibc and system libraries"
-log "  - All stdenv bootstrap stages"
-log "  - Nix and dependencies"
-log "  - Essential utilities"
-log ""
-log "Following the cross-compilation approach from:"
-log "  https://nix.dev/tutorials/cross-compilation.html"
-log ""
-
-if nix-build bootstrap.nix -A installer \
-    --arg crossSystem "{ config = \"$TARGET_PLATFORM\"; }" \
-    -o "$OUTPUT_DIR/installer" 2>&1 | tee "$OUTPUT_DIR/build.log"; then
-    success "Installer built successfully!"
+# Function to build for a specific architecture
+build_for_arch() {
+    local arch=$1
+    local target_platform=${TARGET_PLATFORMS[$arch]}
     
-    # Find the tarball (following symlinks with -L)
-    TARBALL=$(find -L "$OUTPUT_DIR/installer" -maxdepth 1 -name "nix-termux-aarch64.tar.gz" -type f | head -n 1)
+    log "Building Nix installer for Termux ($arch)..."
+    log "Using crossSystem: { config = \"$target_platform\"; }"
+    log ""
+    log "Note: This may take a LONG time (several hours) as it builds:"
+    log "  - The entire GCC toolchain for $arch"
+    log "  - Glibc and system libraries"
+    log "  - All stdenv bootstrap stages"
+    log "  - Nix and dependencies"
+    log "  - Essential utilities"
+    log ""
+    log "Following the cross-compilation approach from:"
+    log "  https://nix.dev/tutorials/cross-compilation.html"
+    log ""
     
-    if [ -n "$TARBALL" ]; then
-        TARBALL_SIZE=$(du -h "$TARBALL" | cut -f1)
-        success "Tarball found: $TARBALL"
-        log "Tarball size: $TARBALL_SIZE"
+    local arch_output_dir="$OUTPUT_DIR/$arch"
+    mkdir -p "$arch_output_dir"
+    
+    if nix-build bootstrap.nix -A "installer.$arch.installer" \
+        --arg crossSystem "{ config = \"$target_platform\"; }" \
+        -o "$arch_output_dir/installer" 2>&1 | tee "$arch_output_dir/build.log"; then
+        success "Installer built successfully for $arch!"
         
-        # Copy to a more convenient location
-        cp "$TARBALL" "$OUTPUT_DIR/nix-termux-aarch64.tar.gz"
-        success "Copied to: $OUTPUT_DIR/nix-termux-aarch64.tar.gz"
+        # Find the tarball (following symlinks with -L)
+        TARBALL=$(find -L "$arch_output_dir/installer" -maxdepth 1 -name "nix-termux-$arch.tar.gz" -type f | head -n 1)
+        
+        if [ -n "$TARBALL" ]; then
+            TARBALL_SIZE=$(du -h "$TARBALL" | cut -f1)
+            success "Tarball found: $TARBALL"
+            log "Tarball size: $TARBALL_SIZE"
+            
+            # Copy to a more convenient location
+            cp "$TARBALL" "$OUTPUT_DIR/nix-termux-$arch.tar.gz"
+            success "Copied to: $OUTPUT_DIR/nix-termux-$arch.tar.gz"
+        else
+            error "Could not find tarball in installer output for $arch"
+            log "Contents of installer output:"
+            ls -la "$arch_output_dir/installer"
+            return 1
+        fi
     else
-        error "Could not find tarball in installer output"
-        log "Contents of installer output:"
-        ls -la "$OUTPUT_DIR/installer"
-        exit 1
+        error "Build failed for $arch!"
+        return 1
     fi
-    
+}
+
+# Build for each architecture
+FAILED_ARCHS=()
+for arch in "${ARCHS_TO_BUILD[@]}"; do
     echo ""
     log "=========================================="
-    log "Bootstrap build complete!"
+    log "Building for architecture: $arch"
     log "=========================================="
+    echo ""
+    
+    if ! build_for_arch "$arch"; then
+        FAILED_ARCHS+=("$arch")
+    fi
+done
+
+# Summary
+echo ""
+log "=========================================="
+log "Build process complete!"
+log "=========================================="
+echo ""
+
+if [ ${#FAILED_ARCHS[@]} -eq 0 ]; then
+    success "All builds completed successfully!"
+    
+    log "Generated installers:"
+    for arch in "${ARCHS_TO_BUILD[@]}"; do
+        if [ -f "$OUTPUT_DIR/nix-termux-$arch.tar.gz" ]; then
+            log "  - $OUTPUT_DIR/nix-termux-$arch.tar.gz"
+        fi
+    done
+    
     echo ""
     log "Next steps:"
-    log "1. Transfer the tarball to your Termux device:"
-    log "   $OUTPUT_DIR/nix-termux-aarch64.tar.gz"
+    log "1. Transfer the tarballs to your Termux devices"
+    for arch in "${ARCHS_TO_BUILD[@]}"; do
+        log "   $OUTPUT_DIR/nix-termux-$arch.tar.gz"
+    done
     echo ""
     log "2. On Termux, extract and run the installer:"
-    log "   tar -xzf nix-termux-aarch64.tar.gz"
+    log "   tar -xzf nix-termux-<arch>.tar.gz"
     log "   cd tarball"
     log "   ./install.sh"
     echo ""
     log "3. Follow the instructions displayed by the installer"
     echo ""
-    
 else
-    error "Build failed!"
+    error "Builds failed for architectures: ${FAILED_ARCHS[*]}"
     exit 1
 fi
