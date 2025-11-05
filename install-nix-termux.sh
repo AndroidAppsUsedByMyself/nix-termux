@@ -9,7 +9,7 @@
 set -e
 
 # Configuration
-REPO_OWNER="mio-19"
+REPO_OWNER="AndroidAppsUsedByMyself"
 REPO_NAME="nix-termux"
 GITHUB_API="https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest"
 TERMUX_PREFIX="/data/data/com.termux/files"
